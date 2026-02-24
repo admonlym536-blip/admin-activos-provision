@@ -30,15 +30,12 @@ export default function Dashboard() {
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
-
       if (!data.session) {
         router.push("/");
         return;
       }
-
       setUserEmail(data.session.user.email || null);
     };
-
     checkSession();
   }, [router]);
 
@@ -59,7 +56,6 @@ export default function Dashboard() {
       setActivos(data);
       setActivosFiltrados(data);
     }
-
     setLoading(false);
   };
 
@@ -68,7 +64,6 @@ export default function Dashboard() {
       .from("zonas")
       .select("codigo_zona, nombre_zona")
       .eq("activa", true);
-
     if (data) setZonas(data);
   };
 
@@ -110,27 +105,22 @@ export default function Dashboard() {
   };
 
   const guardarCambios = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    if (!activoSeleccionado) return;
 
-    await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/reasignar-activo-agenda`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({
-          serial: activoSeleccionado.serial,
-          codigo_cliente_nuevo: codigoNuevo,
-          razon_social_nuevo: razonNueva,
-          zona_nueva: zonaNueva,
-          dia_visita_nuevo: diaNuevo,
-        }),
-      }
-    );
+    const { error } = await supabase
+      .from("activos_agenda")
+      .update({
+        codigo_cliente: codigoNuevo,
+        razon_social: razonNueva,
+        zona: zonaNueva,
+        dia_visita: diaNuevo,
+      })
+      .eq("serial", activoSeleccionado.serial);
+
+    if (error) {
+      alert("Error al actualizar el activo");
+      return;
+    }
 
     setModalOpen(false);
     cargarActivos();
@@ -142,11 +132,9 @@ export default function Dashboard() {
     const confirmacion = confirm(
       `¿Seguro que deseas eliminar el activo ${serial}?`
     );
-
     if (!confirmacion) return;
 
     await supabase.from("activos_agenda").delete().eq("serial", serial);
-
     cargarActivos();
   };
 
@@ -156,10 +144,7 @@ export default function Dashboard() {
     const worksheet = XLSX.utils.json_to_sheet(activos);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Activos");
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer]);
     saveAs(blob, "activos.xlsx");
   };
@@ -178,11 +163,8 @@ export default function Dashboard() {
     const json = XLSX.utils.sheet_to_json(sheet);
 
     await supabase.from("activos_agenda").insert(json);
-
     cargarActivos();
   };
-
-  /* ================= UI ================= */
 
   return (
     <div style={pageStyle}>
@@ -264,13 +246,9 @@ export default function Dashboard() {
                     <td style={tdStyle}>{a.zona}</td>
                     <td style={tdStyle}>{a.dia_visita}</td>
                     <td style={tdStyle}>
-                      <button
-                        onClick={() => abrirModal(a)}
-                        style={buttonGreen}
-                      >
+                      <button onClick={() => abrirModal(a)} style={buttonGreen}>
                         Editar
                       </button>
-
                       <button
                         onClick={() => eliminarActivo(a.serial)}
                         style={buttonRed}
@@ -285,11 +263,91 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* ================= MODAL ================= */}
+
+      {modalOpen && (
+        <div style={overlayStyle}>
+          <div style={modalStyle}>
+            <h3>Editar Activo</h3>
+
+            <input
+              value={codigoNuevo}
+              onChange={(e) => setCodigoNuevo(e.target.value)}
+              style={inputStyle}
+            />
+
+            <input
+              value={razonNueva}
+              onChange={(e) => setRazonNueva(e.target.value)}
+              style={inputStyle}
+            />
+
+            <select
+              value={zonaNueva}
+              onChange={(e) => setZonaNueva(e.target.value)}
+              style={inputStyle}
+            >
+              {zonas.map((z) => (
+                <option key={z.codigo_zona} value={z.nombre_zona}>
+                  {z.nombre_zona}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={diaNuevo}
+              onChange={(e) => setDiaNuevo(e.target.value)}
+              style={inputStyle}
+            >
+              <option>Lunes</option>
+              <option>Martes</option>
+              <option>Miércoles</option>
+              <option>Jueves</option>
+              <option>Viernes</option>
+              <option>Sábado</option>
+            </select>
+
+            <div style={{ marginTop: 15 }}>
+              <button onClick={guardarCambios} style={buttonGreen}>
+                Guardar
+              </button>
+
+              <button
+                onClick={() => setModalOpen(false)}
+                style={buttonRed}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ==================== ESTILOS ==================== */
+/* ================= ESTILOS ================= */
+
+const overlayStyle: CSSProperties = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  backgroundColor: "rgba(0,0,0,0.5)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 1000,
+};
+
+const modalStyle: CSSProperties = {
+  backgroundColor: "white",
+  padding: 25,
+  borderRadius: 8,
+  width: 400,
+};
 
 const pageStyle: CSSProperties = {
   backgroundColor: "#E5E7EB",
@@ -305,9 +363,7 @@ const headerStyle: CSSProperties = {
   alignItems: "center",
 };
 
-const contentWrapper: CSSProperties = {
-  padding: 30,
-};
+const contentWrapper: CSSProperties = { padding: 30 };
 
 const metricCard: CSSProperties = {
   backgroundColor: "#DBEAFE",
@@ -343,11 +399,7 @@ const tableHeader: CSSProperties = {
   color: "white",
 };
 
-const thStyle: CSSProperties = {
-  padding: 10,
-  textAlign: "left",
-};
-
+const thStyle: CSSProperties = { padding: 10, textAlign: "left" };
 const tdStyle: CSSProperties = {
   padding: 10,
   borderBottom: "1px solid #ddd",
