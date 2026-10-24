@@ -22,7 +22,7 @@ import {
 import { useDatos } from "@/src/lib/DatosContext";
 import { darDeBaja, mensajeError, reactivar } from "@/src/lib/datos";
 import { exportarActivos } from "@/src/lib/excel";
-import { Activo, DIAS, ESTADO_RETIRADO } from "@/src/lib/tipos";
+import { Activo, DIAS, ESTADO_RETIRADO, nombresDeZona } from "@/src/lib/tipos";
 import { ActivoForm } from "@/src/components/ActivoForm";
 import { AsignarModal } from "@/src/components/AsignarModal";
 import { Encabezado } from "@/src/components/Encabezado";
@@ -309,9 +309,9 @@ function Activos() {
                   {n} (zona que ya no existe · {c})
                 </option>
               ))}
-              {zonas.map((z) => (
-                <option key={z.codigo_zona} value={z.nombre_zona}>
-                  {z.nombre_zona}
+              {nombresDeZona(zonas).map((n) => (
+                <option key={n} value={n}>
+                  {n}
                 </option>
               ))}
             </select>

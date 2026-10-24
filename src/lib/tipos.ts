@@ -46,6 +46,21 @@ export type Zona = {
   activa: boolean;
 };
 
+/** Nombres de zona sin repetir (varios códigos pueden compartir nombre). */
+export const nombresDeZona = (zonas: Zona[]) =>
+  [...new Set(zonas.map((z) => z.nombre_zona))].sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
+
+/** "Pasacaballos (23001, 23002)": una opción por nombre con sus códigos. */
+export const opcionesZona = (zonas: Zona[]) =>
+  nombresDeZona(zonas).map((nombre) => {
+    const suyas = zonas.filter((z) => z.nombre_zona === nombre);
+    const codigos = suyas.map((z) => z.codigo_zona).join(", ");
+    const inactiva = suyas.every((z) => !z.activa) ? " · inactiva" : "";
+    return { nombre, etiqueta: `${nombre} (${codigos})${inactiva}` };
+  });
+
 export type EjecucionZona = {
   zona: string;
   total_dia: number;

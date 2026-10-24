@@ -5,7 +5,12 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useDatos } from "@/src/lib/DatosContext";
-import { Activo, colorSemaforo, ESTADO_RETIRADO } from "@/src/lib/tipos";
+import {
+  Activo,
+  colorSemaforo,
+  ESTADO_RETIRADO,
+  nombresDeZona,
+} from "@/src/lib/tipos";
 import { ActivoForm } from "@/src/components/ActivoForm";
 import { Encabezado } from "@/src/components/Encabezado";
 import { ArrowRight, MapPinOff } from "lucide-react";
@@ -36,6 +41,7 @@ function Mapa() {
   const params = useSearchParams();
 
   const [zona, setZona] = useState("");
+  const [tipo, setTipo] = useState("");
   const [semaforo, setSemaforo] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [enfocadoSerial, setEnfocadoSerial] = useState(
@@ -48,6 +54,16 @@ function Mapa() {
     [activos]
   );
 
+  // Tipos con cuántos activos tienen ubicación (para el selector)
+  const tipos = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of enUso) {
+      if (!a.tipo || a.lat == null) continue;
+      m.set(a.tipo, (m.get(a.tipo) ?? 0) + 1);
+    }
+    return [...m.entries()].sort((x, y) => x[0].localeCompare(y[0], "es"));
+  }, [enUso]);
+
   const conUbicacion = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return enUso.filter(
@@ -55,13 +71,14 @@ function Mapa() {
         a.lat != null &&
         a.lng != null &&
         (!zona || a.zona === zona) &&
+        (!tipo || a.tipo === tipo) &&
         (!semaforo || a.semaforo === semaforo) &&
         (!q ||
           `${a.serial} ${a.razon_social} ${a.codigo_cliente}`
             .toLowerCase()
             .includes(q))
     );
-  }, [enUso, zona, semaforo, busqueda]);
+  }, [enUso, zona, tipo, semaforo, busqueda]);
 
   const sinUbicacion = enUso.filter((a) => a.lat == null).length;
   const enfocado =
@@ -97,12 +114,41 @@ function Mapa() {
               }}
             >
               <option value="">Todos los asesores</option>
-              {zonas.map((z) => (
-                <option key={z.codigo_zona} value={z.nombre_zona}>
-                  {z.nombre_zona}
+              {nombresDeZona(zonas).map((n) => (
+                <option key={n} value={n}>
+                  {n}
                 </option>
               ))}
             </select>
+            <select
+              className={claseInput}
+              value={tipo}
+              onChange={(e) => {
+                setTipo(e.target.value);
+                setEnfocadoSerial("");
+              }}
+            >
+              <option value="">Todos los tipos de activo</option>
+              {tipos.map(([t, n]) => (
+                <option key={t} value={t}>
+                  {t} ({n})
+                </option>
+              ))}
+            </select>
+            {(zona || tipo || semaforo || busqueda) && (
+              <button
+                onClick={() => {
+                  setZona("");
+                  setTipo("");
+                  setSemaforo("");
+                  setBusqueda("");
+                  setEnfocadoSerial("");
+                }}
+                className="text-sm font-medium text-slate-500 hover:text-slate-800"
+              >
+                Limpiar filtros
+              </button>
+            )}
             <div className="flex flex-wrap gap-2">
               {["", "Verde", "Amarillo", "Rojo"].map((s) => (
                 <button

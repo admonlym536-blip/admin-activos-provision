@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { asignarActivos, mensajeError } from "@/src/lib/datos";
 import { useDatos } from "@/src/lib/DatosContext";
-import { Activo, DIAS } from "@/src/lib/tipos";
+import { Activo, DIAS, opcionesZona } from "@/src/lib/tipos";
 import { Boton, Campo, claseInput, Modal, useAvisos } from "@/src/components/ui";
 
 /** Asignar varios activos a un asesor y/o día de una sola vez. */
@@ -82,9 +82,9 @@ export function AsignarModal({
             onChange={(e) => setZona(e.target.value)}
           >
             <option value="">— Mantener actual —</option>
-            {zonas.map((z) => (
-              <option key={z.codigo_zona} value={z.nombre_zona}>
-                {z.nombre_zona} ({z.codigo_zona})
+            {opcionesZona(zonas).map((o) => (
+              <option key={o.nombre} value={o.nombre}>
+                {o.etiqueta}
               </option>
             ))}
           </select>
