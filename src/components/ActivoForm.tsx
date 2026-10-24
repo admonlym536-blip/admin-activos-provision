@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { guardarActivo, mensajeError } from "@/src/lib/datos";
 import { useDatos } from "@/src/lib/DatosContext";
-import { Activo, ActivoEditable, DIAS } from "@/src/lib/tipos";
+import { Activo, ActivoEditable, DIAS, opcionesZona } from "@/src/lib/tipos";
 import { Boton, Campo, claseInput, Modal, useAvisos } from "@/src/components/ui";
 
 const VACIO: ActivoEditable = {
@@ -208,10 +208,9 @@ export function ActivoForm({
                 onChange={(e) => set("zona", e.target.value)}
               >
                 <option value="">— Sin asignar —</option>
-                {zonas.map((z) => (
-                  <option key={z.codigo_zona} value={z.nombre_zona}>
-                    {z.nombre_zona} ({z.codigo_zona})
-                    {z.activa ? "" : " · inactiva"}
+                {opcionesZona(zonas).map((o) => (
+                  <option key={o.nombre} value={o.nombre}>
+                    {o.etiqueta}
                   </option>
                 ))}
               </select>

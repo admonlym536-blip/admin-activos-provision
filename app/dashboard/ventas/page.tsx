@@ -25,7 +25,12 @@ import {
   ResumenVentaActivo,
   VentaDiaria,
 } from "@/src/lib/ventas";
-import { colorAvance, COLORES, ESTADO_RETIRADO } from "@/src/lib/tipos";
+import {
+  colorAvance,
+  COLORES,
+  ESTADO_RETIRADO,
+  nombresDeZona,
+} from "@/src/lib/tipos";
 import { Encabezado } from "@/src/components/Encabezado";
 import {
   Alerta,
@@ -415,7 +420,7 @@ export default function VentasPage() {
                 />
                 <select className={claseInput} value={zona} onChange={(e) => setZona(e.target.value)}>
                   <option value="">Todos los asesores</option>
-                  {[...new Set(zonas.map((z) => z.nombre_zona))].map((n) => (
+                  {nombresDeZona(zonas).map((n) => (
                     <option key={n}>{n}</option>
                   ))}
                 </select>
