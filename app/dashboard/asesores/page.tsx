@@ -39,6 +39,17 @@ export default function AsesoresPage() {
 
   const sinAsignar = enUso.filter((a) => !a.asignado || !a.zona).length;
 
+  // Activos con un nombre de zona que ya no existe (ej: zona renombrada)
+  const zonasInexistentes = useMemo(() => {
+    const nombres = new Set(zonas.map((z) => z.nombre_zona));
+    const conteo = new Map<string, number>();
+    for (const a of enUso) {
+      if (!a.zona || nombres.has(a.zona)) continue;
+      conteo.set(a.zona, (conteo.get(a.zona) ?? 0) + 1);
+    }
+    return [...conteo.entries()];
+  }, [enUso, zonas]);
+
   // Nombres de zona únicos (varios asesores pueden compartir nombre)
   const nombresZona = useMemo(() => {
     const m = new Map<string, number>();
@@ -84,6 +95,26 @@ export default function AsesoresPage() {
         titulo="Asesores"
         subtitulo="Carga de activos por asesor y avance de la agenda de hoy"
       />
+
+      {zonasInexistentes.map(([n, c]) => (
+        <div key={n} className="mb-4">
+          <Alerta
+            tipo="error"
+            icono={UserX}
+            accion={
+              <Link
+                href={`/dashboard/activos?zona=${encodeURIComponent(n)}`}
+                className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline"
+              >
+                Reasignarlos <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            }
+          >
+            <b>{c} activos</b> siguen asignados a <b>“{n}”</b>, una zona que ya
+            no existe. Ningún asesor los ve en su agenda.
+          </Alerta>
+        </div>
+      ))}
 
       {sinAsignar > 0 && (
         <div className="mb-6">

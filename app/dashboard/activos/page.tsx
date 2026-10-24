@@ -91,6 +91,17 @@ function Activos() {
     [activos]
   );
 
+  // Activos asignados a un nombre de zona que ya no existe (ej: zona renombrada)
+  const zonasInexistentes = useMemo(() => {
+    const nombres = new Set(zonas.map((z) => z.nombre_zona));
+    const conteo = new Map<string, number>();
+    for (const a of activos) {
+      if (a.estado === ESTADO_RETIRADO || !a.zona || nombres.has(a.zona)) continue;
+      conteo.set(a.zona, (conteo.get(a.zona) ?? 0) + 1);
+    }
+    return [...conteo.entries()].sort((x, y) => x[0].localeCompare(y[0]));
+  }, [activos, zonas]);
+
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return activos.filter((a) => {
@@ -227,6 +238,30 @@ function Activos() {
         </div>
       )}
 
+      {zonasInexistentes.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {zonasInexistentes.map(([n, c]) => (
+            <Alerta
+              key={n}
+              icono={AlertTriangle}
+              accion={
+                zona === n ? undefined : (
+                  <Boton variante="secundario" onClick={() => setZona(n)}>
+                    Ver los {c}
+                  </Boton>
+                )
+              }
+            >
+              <b>{c} activos</b> están asignados a la zona <b>“{n}”</b>, que ya
+              no existe. Los asesores no los ven en su agenda.{" "}
+              {zona === n
+                ? "Selecciónalos con la casilla del encabezado y usa “Asignar a asesor”."
+                : "Fíltralos y reasígnalos a la zona correcta."}
+            </Alerta>
+          ))}
+        </div>
+      )}
+
       <Tarjeta className="overflow-hidden p-0">
         {/* ---------------- FILTROS ---------------- */}
         <div className="space-y-3 border-b border-slate-200 p-4">
@@ -269,6 +304,11 @@ function Activos() {
             >
               <option value="">Todos los asesores</option>
               <option value={SIN_ASIGNAR}>Sin asignar</option>
+              {zonasInexistentes.map(([n, c]) => (
+                <option key={n} value={n}>
+                  {n} (zona que ya no existe · {c})
+                </option>
+              ))}
               {zonas.map((z) => (
                 <option key={z.codigo_zona} value={z.nombre_zona}>
                   {z.nombre_zona}
@@ -313,6 +353,16 @@ function Activos() {
             <span className="text-sm font-medium text-slate-900">
               {seleccion.size} seleccionado(s)
             </span>
+            {seleccion.size < filtrados.length && (
+              <button
+                onClick={() =>
+                  setSeleccion(new Set(filtrados.map((a) => a.serial)))
+                }
+                className="text-sm font-medium text-marca hover:underline"
+              >
+                Seleccionar los {filtrados.length} filtrados
+              </button>
+            )}
             <button
               onClick={() => setSeleccion(new Set())}
               className="text-sm text-slate-500 hover:text-slate-800"
