@@ -10,6 +10,7 @@ import {
   LogOut,
   Map as MapIcon,
   Package,
+  TrendingUp,
   Upload,
   Users,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import { AvisosProvider, Cargando } from "@/src/components/ui";
 const MENU = [
   { href: "/dashboard", icono: LayoutDashboard, texto: "Resumen" },
   { href: "/dashboard/activos", icono: Package, texto: "Activos" },
+  { href: "/dashboard/ventas", icono: TrendingUp, texto: "Ventas" },
   { href: "/dashboard/alertas", icono: BellRing, texto: "Alertas" },
   { href: "/dashboard/asesores", icono: Users, texto: "Asesores" },
   { href: "/dashboard/mapa", icono: MapIcon, texto: "Mapa" },
